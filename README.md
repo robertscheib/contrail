@@ -8,6 +8,8 @@ enrichment, and a configurable interesting-aircraft watchlist.
 
 > Node.js / Express + SQLite. No build step.
 
+![radar-dash dashboard](assets/dashboard.png)
+
 ## Requirements
 
 - Node.js 18+ (developed on v24)
