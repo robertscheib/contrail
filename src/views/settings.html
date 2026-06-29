@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>radar-dash · Admin Dashboard</title>
+<style>
+  :root {
+    --bg:#0d1117; --panel:#111a26; --border:#1e3a5f; --text:#e6edf3; --muted:#8b949e;
+    --blue:#2f81f7; --blue-lt:#58a6ff; --green:#3fb950; --red:#f85149; --amber:#d29922;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text);
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:14px; }
+  .wrap { max-width:900px; margin:0 auto; padding:24px 16px 80px; }
+  h1 { font-size:20px; margin:0 0 4px; }
+  .sub { color:var(--muted); font-size:12px; margin-bottom:20px; }
+  .sub a { color:var(--blue-lt); text-decoration:none; }
+  
+  /* Tabs */
+  .admin-tabs { display:flex; gap:8px; border-bottom:1px solid var(--border); margin-bottom:20px; padding-bottom:8px; }
+  .tab-btn { background:transparent; color:var(--muted); border:none; border-radius:4px; padding:8px 16px; font-weight:600; cursor:pointer; font:inherit; }
+  .tab-btn:hover { color:var(--text); }
+  .tab-btn.active { background:var(--border); color:var(--text); }
+  
+  .tab-content { display:none; }
+  .tab-content.active { display:block; }
+
+  /* Forms & settings groups */
+  .group { background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:16px; margin-bottom:16px; }
+  .group h2 { font-size:13px; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--blue-lt); margin:0 0 14px; }
+  .field { margin-bottom:18px; }
+  .field:last-child { margin-bottom:4px; }
+  .field label { display:block; font-weight:600; margin-bottom:4px; }
+  .field .help { color:var(--muted); font-size:12px; margin-bottom:8px; line-height:1.4; }
+  .field .restart { color:var(--amber); }
+  .row { display:flex; align-items:center; gap:12px; }
+  
+  input[type=number], input[type=text], input[type=password], select {
+    background:#0a1220; border:1px solid var(--border); color:var(--text);
+    border-radius:6px; padding:7px 10px; font:inherit; width:100%; }
+  input[type=number], input[type=text] { width:100%; max-width:280px; }
+  input[type=password] { max-width:320px; }
+  select { max-width:240px; }
+  
+  .secret-badge { font-size:11px; padding:2px 8px; border-radius:10px;
+    border:1px solid var(--border); color:var(--muted); display:inline-block; }
+  .secret-badge.on { color:var(--green); border-color:var(--green); }
+  input[type=range] { flex:1; accent-color:var(--blue); }
+  input:focus, select:focus { outline:none; border-color:var(--blue); }
+  
+  /* Tables */
+  table { width:100%; border-collapse:collapse; margin-top:12px; font-size:13px; }
+  th, td { text-align:left; padding:10px 12px; border-bottom:1px solid var(--border); }
+  th { color:var(--blue-lt); text-transform:uppercase; font-size:11px; letter-spacing:1px; font-weight:600; }
+  tr:hover td { background:rgba(255,255,255,0.01); }
+  
+  /* Search Row */
+  .search-row { display:flex; gap:12px; margin-bottom:16px; align-items:center; }
+  .search-row input { flex:1; max-width:none; }
+  
+  /* Modals */
+  .modal-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; z-index:1000; padding:16px; }
+  .modal-overlay.active { display:flex; }
+  .modal { background:var(--panel); border:1px solid var(--border); border-radius:10px; width:100%; max-width:500px; padding:20px; box-shadow:0 10px 25px rgba(0,0,0,0.5); }
+  .modal h3 { margin-top:0; color:var(--blue-lt); font-size:15px; text-transform:uppercase; border-bottom:1px solid var(--border); padding-bottom:8px; margin-bottom:16px; }
+  
+  .modal-fields { display:flex; flex-direction:column; gap:12px; margin-bottom:20px; max-height:60vh; overflow-y:auto; padding-right:4px; }
+  .modal-fields .field { margin-bottom:0; }
+  .modal-fields input, .modal-fields select { max-width:none !important; }
+  
+  .modal-actions { display:flex; justify-content:flex-end; gap:10px; }
+  
+  /* Pagination */
+  .pagination { display:flex; justify-content:center; gap:12px; margin-top:20px; align-items:center; }
+  .pagination span { font-size:12px; color:var(--muted); }
+  .pagination button { padding:4px 10px; font-size:12px; }
+
+  /* Save Bar */
+  .bar { position:fixed; left:0; right:0; bottom:0; background:#0a1220cc;
+    backdrop-filter:blur(6px); border-top:1px solid var(--border);
+    padding:12px 16px; display:flex; align-items:center; gap:14px; justify-content:flex-end; z-index:100; }
+  .bar .status { margin-right:auto; font-size:12px; color:var(--muted); }
+  
+  /* Buttons */
+  button { background:var(--blue); color:#fff; border:none; border-radius:6px;
+    padding:9px 18px; font:inherit; font-weight:600; cursor:pointer; }
+  button:disabled { opacity:.5; cursor:default; }
+  button.secondary { background:transparent; border:1px solid var(--border); color:var(--text); }
+  button.secondary:hover { border-color:var(--blue-lt); }
+  
+  .toast { color:var(--green); } .toast.err { color:var(--red); } .toast.warn { color:var(--amber); }
+  .diag-flag { font-weight:600; padding:1px 8px; border-radius:10px; font-size:12px; }
+  .diag-ok { background:rgba(63,185,80,.15); color:var(--green); border:1px solid var(--green); }
+  .diag-bad { background:rgba(248,81,73,.15); color:var(--red); border:1px solid var(--red); }
+  .diag-row { color:var(--muted); font-size:12px; margin-top:8px; line-height:1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Admin Dashboard</h1>
+  <div class="sub">radar-dash management · <a href="/">← back to dashboard</a></div>
+  
+  <div class="admin-tabs">
+    <button type="button" class="tab-btn active" id="btn-tab-settings" onclick="switchAdminTab('settings')">Settings</button>
+    <button type="button" class="tab-btn" id="btn-tab-watchlist" onclick="switchAdminTab('watchlist')">Watchlist Manager</button>
+    <button type="button" class="tab-btn" id="btn-tab-feeders" onclick="switchAdminTab('feeders')">Custom Feeders</button>
+  </div>
+
+  <!-- Settings Tab -->
+  <div id="tab-settings" class="tab-content active">
+    <form id="form"><div id="groups">Loading settings…</div></form>
+    <div id="diag"></div>
+  </div>
+
+  <!-- Watchlist Tab -->
+  <div id="tab-watchlist" class="tab-content">
+    <div class="search-row">
+      <input type="text" id="watchlist-search" placeholder="Search by ICAO, Registration, Operator, or Type..." oninput="onWatchlistSearch()">
+      <button type="button" onclick="openWatchlistModal()">+ Add Aircraft</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>ICAO</th>
+            <th>Registration</th>
+            <th>Operator</th>
+            <th>Type</th>
+            <th>Category</th>
+            <th>Tags</th>
+            <th style="width:140px;text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="watchlist-table-body">
+          <tr><td colspan="7" style="color:var(--muted)">Loading watchlist…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination" id="watchlist-pagination"></div>
+  </div>
+
+  <!-- Feeders Tab -->
+  <div id="tab-feeders" class="tab-content">
+    <div class="search-row" style="justify-content:flex-end">
+      <button type="button" onclick="openFeederModal()">+ Add Feeder</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Key</th>
+            <th>Name</th>
+            <th>Initials</th>
+            <th>Source</th>
+            <th>MLAT</th>
+            <th>Docker Container</th>
+            <th style="width:140px;text-align:right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="feeders-table-body">
+          <tr><td colspan="7" style="color:var(--muted)">Loading feeders…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="app-version" style="text-align:center;margin-top:24px;font-size:11px;color:var(--muted)"></div>
+</div>
+
+<div class="bar">
+  <span class="status" id="status"></span>
+  <button type="button" class="secondary" id="reset">Reset to current</button>
+  <button type="button" id="save" disabled>Save</button>
+</div>
+
+<!-- Watchlist Modal -->
+<div id="watchlist-modal" class="modal-overlay">
+  <div class="modal">
+    <h3 id="watchlist-modal-title">Add Aircraft</h3>
+    <form id="watchlist-form" onsubmit="saveWatchlist(event)">
+      <div class="modal-fields">
+        <div class="field">
+          <label>ICAO Hex (6 characters)</label>
+          <input type="text" id="w-icao" required pattern="^[0-9a-fA-F]{6}$" placeholder="ae4f16">
+        </div>
+        <div class="field">
+          <label>Registration</label>
+          <input type="text" id="w-registration" placeholder="N12345">
+        </div>
+        <div class="field">
+          <label>Operator</label>
+          <input type="text" id="w-operator" placeholder="US Air Force">
+        </div>
+        <div class="field">
+          <label>Aircraft Type</label>
+          <input type="text" id="w-type" placeholder="Boeing C-17">
+        </div>
+        <div class="field">
+          <label>ICAO Type Code</label>
+          <input type="text" id="w-icao-type" placeholder="C17">
+        </div>
+        <div class="field">
+          <label>Category</label>
+          <select id="w-category">
+            <option value="military">Military</option>
+            <option value="government">Government</option>
+            <option value="police">Police</option>
+            <option value="civilian">Civilian</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Tags (comma separated)</label>
+          <input type="text" id="w-tags" placeholder="VIP, Reach">
+        </div>
+        <div class="field">
+          <label>Info Link</label>
+          <input type="text" id="w-link" placeholder="https://...">
+        </div>
+        <div class="field">
+          <label>Photo URL</label>
+          <input type="text" id="w-image-link" placeholder="https://...">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="secondary" onclick="closeWatchlistModal()">Cancel</button>
+        <button type="submit">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Feeder Modal -->
+<div id="feeder-modal" class="modal-overlay">
+  <div class="modal">
+    <h3 id="feeder-modal-title">Add Feeder</h3>
+    <form id="feeder-form" onsubmit="saveFeeder(event)">
+      <div class="modal-fields">
+        <div class="field">
+          <label>Feeder Key (unique, lowercase)</label>
+          <input type="text" id="f-key" required pattern="^[a-z0-9_]+$" placeholder="adsbexchange">
+        </div>
+        <div class="field">
+          <label>Display Name</label>
+          <input type="text" id="f-name" required placeholder="ADS-B Exchange">
+        </div>
+        <div class="field">
+          <label>Initials (2-3 chars)</label>
+          <input type="text" id="f-initials" placeholder="AX">
+        </div>
+        <div class="field">
+          <label>Color (Hex)</label>
+          <input type="text" id="f-color" value="#3b82f6" placeholder="#3b82f6">
+        </div>
+        <div class="field">
+          <label>Source Type</label>
+          <select id="f-source">
+            <option value="realtime">Realtime (Aggregator)</option>
+            <option value="ultrafeeder">Ultrafeeder (Local Probes)</option>
+            <option value="audit">Audit (Manual/Static)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Public Web Stats URL</label>
+          <input type="text" id="f-public-url" placeholder="https://...">
+        </div>
+        <div class="field">
+          <label>Local Detail URL</label>
+          <input type="text" id="f-detail-url" placeholder="http://192.168.1.150:8754">
+        </div>
+        <div class="field" style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+          <input type="checkbox" id="f-mlat" style="width:auto !important;margin:0;">
+          <label for="f-mlat" style="margin-bottom:0;cursor:pointer;font-weight:normal;">Supports MLAT</label>
+        </div>
+        <div class="field">
+          <label>Docker Container Name (optional, for health tracking)</label>
+          <input type="text" id="f-docker-container" placeholder="ultrafeeder">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="secondary" onclick="closeFeederModal()">Cancel</button>
+        <button type="submit">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const token = new URLSearchParams(location.search).get('token') || '';
+const authq = token ? ('?token=' + encodeURIComponent(token)) : '';
+const $ = id => document.getElementById(id);
+let schema = {}, values = {}, dirty = false;
+let currentAdminTab = 'settings';
+
+function setStatus(msg, cls) {
+  const el = $('status');
+  el.className = 'status toast' + (cls ? ' ' + cls : '');
+  el.textContent = msg;
+}
+function markDirty() { dirty = true; $('save').disabled = false; }
+
+function switchAdminTab(tab) {
+  currentAdminTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.id === `btn-tab-${tab}`);
+  });
+  document.querySelectorAll('.tab-content').forEach(content => {
+    content.classList.toggle('active', content.id === `tab-${tab}`);
+  });
+  
+  const bar = document.querySelector('.bar');
+  if (bar) bar.style.display = tab === 'settings' ? 'flex' : 'none';
+  
+  if (tab === 'watchlist') {
+    loadWatchlist();
+  } else if (tab === 'feeders') {
+    loadFeeders();
+  }
+}
+
+// ── Settings Rendering ──────────────────────────────────────────
+function render() {
+  const order = [];
+  const byGroup = {};
+  for (const [key, def] of Object.entries(schema)) {
+    const g = def.group || 'General';
+    if (!byGroup[g]) { byGroup[g] = []; order.push(g); }
+    byGroup[g].push([key, def]);
+  }
+  $('groups').innerHTML = order.map(g => `
+    <div class="group">
+      <h2>${g}</h2>
+      ${byGroup[g].map(([key, def]) => fieldHtml(key, def)).join('')}
+    </div>`).join('');
+
+  for (const key of Object.keys(schema)) {
+    if (schema[key].type === 'multiselect') {
+      const container = $('field-' + key);
+      if (!container) continue;
+      const checkboxes = container.querySelectorAll('input[type=checkbox]');
+      for (const cb of checkboxes) {
+        cb.addEventListener('change', () => {
+          const checked = Array.from(checkboxes).filter(c => c.checked).map(c => c.value);
+          values[key] = checked.join(',');
+          markDirty();
+          applyVisibility();
+        });
+      }
+      continue;
+    }
+    const main = $('in-' + key);
+    if (!main) continue;
+    if (schema[key].type === 'secret') values[key] = '';
+    const evt = schema[key].type === 'bool' ? 'change' : 'input';
+    main.addEventListener(evt, () => {
+      if (schema[key].type === 'bool') {
+        values[key] = main.checked;
+        const lbl = $('lbl-' + key); if (lbl) lbl.textContent = main.checked ? 'on' : 'off';
+      } else {
+        values[key] = schema[key].type === 'number' ? Number(main.value) : main.value;
+      }
+      const slider = $('rng-' + key);
+      if (slider && slider !== main) slider.value = main.value;
+      markDirty();
+      applyVisibility();
+    });
+    const slider = $('rng-' + key);
+    if (slider) slider.addEventListener('input', () => { main.value = slider.value; main.dispatchEvent(new Event('input')); });
+  }
+  applyVisibility();
+}
+
+function applyVisibility() {
+  for (const [key, def] of Object.entries(schema)) {
+    const el = $('field-' + key);
+    if (!el) continue;
+    let show = true;
+    if (def.showIf) {
+      for (const [dep, allowed] of Object.entries(def.showIf)) {
+        if (!allowed.includes(values[dep])) { show = false; break; }
+      }
+    }
+    el.style.display = show ? '' : 'none';
+  }
+}
+
+function renderDiag(diag) {
+  const t = diag && diag.track;
+  if (!t) { $('diag').innerHTML = ''; return; }
+  const flag = t.failing
+    ? '<span class="diag-flag diag-bad">✗ FAILING</span>'
+    : '<span class="diag-flag diag-ok">✓ OK</span>';
+  const when = ts => ts ? new Date(ts).toLocaleString() : 'never';
+  $('diag').innerHTML = `
+    <div class="group">
+      <h2>Flight-path track source ${flag}</h2>
+      <div class="diag-row">
+        Resolved via <b>ADSBExchange</b>: ${t.adsbex} · via <b>OpenSky</b> (fallback): ${t.opensky} · <b>no track</b>: ${t.none}<br>
+        ADSBEx HTTP failures: ${t.adsbex_http_fail} · last success: ${when(t.last_ok_at)} · last failure: ${when(t.last_fail_at)}
+      </div>
+      ${t.failing ? '<div class="diag-row" style="color:var(--red)">ADSBExchange requests are failing (likely blocked/unreachable) — paths are using OpenSky or none. Check connectivity or back off the poll.</div>' : ''}
+    </div>`;
+}
+
+function fieldHtml(key, def) {
+  const v = values[key];
+  const restart = def.restart ? ' <span class="restart">· restart required</span>' : '';
+  let control;
+  if (def.type === 'number') {
+    const slider = (def.min != null && def.max != null)
+      ? `<input type="range" id="rng-${key}" min="${def.min}" max="${def.max}" step="${def.step||1}" value="${v}">` : '';
+    control = `<div class="row">
+      <input type="number" id="in-${key}" value="${v}"
+        ${def.min!=null?`min="${def.min}"`:''} ${def.max!=null?`max="${def.max}"`:''} step="${def.step||1}">
+      ${slider}</div>`;
+  } else if (def.type === 'enum') {
+    control = `<select id="in-${key}">${(def.options||[]).map(o => {
+      const val = Array.isArray(o) ? o[0] : o;
+      const lbl = Array.isArray(o) ? o[1] : o;
+      return `<option value="${val}"${val===v?' selected':''}>${lbl}</option>`;
+    }).join('')}</select>`;
+  } else if (def.type === 'multiselect') {
+    const active = (v || '').split(',').map(s => s.trim()).filter(Boolean);
+    control = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:4px;">
+      ${(def.options||[]).map(o => {
+        const val = Array.isArray(o) ? o[0] : o;
+        const lbl = Array.isArray(o) ? o[1] : o;
+        return `<label style="display:flex;align-items:center;gap:6px;font-weight:normal;cursor:pointer;user-select:none;">
+          <input type="checkbox" value="${val}" ${active.includes(val) ? 'checked' : ''}>
+          ${lbl}
+        </label>`;
+      }).join('')}
+    </div>`;
+  } else if (def.type === 'bool') {
+    control = `<label class="row" style="gap:8px;cursor:pointer">
+      <input type="checkbox" id="in-${key}"${v ? ' checked' : ''}>
+      <span id="lbl-${key}" style="color:var(--muted)">${v ? 'on' : 'off'}</span></label>`;
+  } else if (def.type === 'secret') {
+    const isSet = v === 'set';
+    control = `<div class="row">
+      <input type="password" id="in-${key}" value="" autocomplete="new-password"
+        placeholder="${isSet ? '•••••• stored — blank keeps it' : '(not set)'}">
+      <span class="secret-badge ${isSet?'on':''}">${isSet ? 'stored' : 'empty'}</span>
+    </div>`;
+  } else {
+    control = `<input type="text" id="in-${key}" value="${String(v).replace(/"/g,'&quot;')}">`;
+  }
+  return `<div class="field" id="field-${key}">
+    <label for="in-${key}">${def.label}${restart}</label>
+    <div class="help">${def.help||''}</div>
+    ${control}
+  </div>`;
+}
+
+// ── Watchlist Management JS ──────────────────────────────────────
+let watchlistPage = 1;
+let watchlistSearch = '';
+
+async function loadWatchlist() {
+  const tbody = $('watchlist-table-body');
+  tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted)">Loading watchlist…</td></tr>';
+  try {
+    const q = new URLSearchParams({
+      page: watchlistPage,
+      limit: 15,
+      search: watchlistSearch,
+      token: token
+    });
+    const r = await fetch(`/admin/watchlist?${q}`, { headers: { 'x-admin-token': token } });
+    if (!r.ok) throw new Error('failed to load');
+    const data = await r.json();
+    
+    tbody.innerHTML = data.items.length ? data.items.map(ac => {
+      const tags = [ac.tag1, ac.tag2, ac.tag3].filter(Boolean).join(', ') || '—';
+      const catColor = ac.category === 'military' ? 'var(--red)' : ac.category === 'government' ? 'var(--amber)' : ac.category === 'police' ? 'var(--blue-lt)' : 'var(--muted)';
+      
+      const safeAc = encodeURIComponent(JSON.stringify(ac));
+      
+      return `
+        <tr>
+          <td><b style="color:var(--blue-lt)">${ac.icao.toUpperCase()}</b></td>
+          <td>${ac.registration || '—'}</td>
+          <td>${ac.operator || '—'}</td>
+          <td>${ac.type || '—'}</td>
+          <td><span style="color:${catColor};font-weight:600;font-size:11px;text-transform:uppercase">${ac.category}</span></td>
+          <td style="color:var(--muted)">${tags}</td>
+          <td style="text-align:right">
+            <button type="button" class="secondary" style="padding:3px 8px;font-size:11px" onclick="editWatchlist(this)" data-aircraft="${safeAc}">Edit</button>
+            <button type="button" class="secondary" style="padding:3px 8px;font-size:11px;color:var(--red);border-color:rgba(248,81,73,0.3)" onclick="deleteWatchlistAircraft('${ac.icao}')">Delete</button>
+          </td>
+        </tr>
+      `;
+    }).join('') : '<tr><td colspan="7" style="color:var(--muted);text-align:center">No aircraft found</td></tr>';
+    
+    renderWatchlistPagination(data.total, 15);
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="7" style="color:var(--red)">Failed to load: ${e.message}</td></tr>`;
+  }
+}
+
+function renderWatchlistPagination(total, limit) {
+  const pages = Math.ceil(total / limit) || 1;
+  const container = $('watchlist-pagination');
+  container.innerHTML = `
+    <button type="button" class="secondary" ${watchlistPage <= 1 ? 'disabled' : ''} onclick="changeWatchlistPage(${watchlistPage - 1})">◀</button>
+    <span>Page ${watchlistPage} of ${pages} (${total} total)</span>
+    <button type="button" class="secondary" ${watchlistPage >= pages ? 'disabled' : ''} onclick="changeWatchlistPage(${watchlistPage + 1})">▶</button>
+  `;
+}
+
+function changeWatchlistPage(p) {
+  watchlistPage = p;
+  loadWatchlist();
+}
+
+let searchTimeout = null;
+function onWatchlistSearch() {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    watchlistSearch = $('watchlist-search').value;
+    watchlistPage = 1;
+    loadWatchlist();
+  }, 300);
+}
+
+function openWatchlistModal(ac = null) {
+  const title = $('watchlist-modal-title');
+  const modal = $('watchlist-modal');
+  
+  if (ac) {
+    title.textContent = 'Edit Watchlist Aircraft';
+    $('w-icao').value = ac.icao.toUpperCase();
+    $('w-icao').disabled = true;
+    $('w-registration').value = ac.registration || '';
+    $('w-operator').value = ac.operator || '';
+    $('w-type').value = ac.type || '';
+    $('w-icao-type').value = ac.icao_type || '';
+    $('w-category').value = ac.category || 'other';
+    $('w-tags').value = [ac.tag1, ac.tag2, ac.tag3].filter(Boolean).join(', ');
+    $('w-link').value = ac.link || '';
+    $('w-image-link').value = ac.image_link || '';
+  } else {
+    title.textContent = 'Add Watchlist Aircraft';
+    $('w-icao').value = '';
+    $('w-icao').disabled = false;
+    $('w-registration').value = '';
+    $('w-operator').value = '';
+    $('w-type').value = '';
+    $('w-icao-type').value = '';
+    $('w-category').value = 'other';
+    $('w-tags').value = '';
+    $('w-link').value = '';
+    $('w-image-link').value = '';
+  }
+  
+  modal.classList.add('active');
+}
+
+function editWatchlist(btn) {
+  const ac = JSON.parse(decodeURIComponent(btn.dataset.aircraft));
+  openWatchlistModal(ac);
+}
+
+function closeWatchlistModal() {
+  $('watchlist-modal').classList.remove('active');
+}
+
+async function saveWatchlist(e) {
+  e.preventDefault();
+  const tags = $('w-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+  const payload = {
+    icao: $('w-icao').value.toLowerCase(),
+    registration: $('w-registration').value || null,
+    operator: $('w-operator').value || null,
+    type: $('w-type').value || null,
+    icao_type: $('w-icao-type').value || null,
+    category: $('w-category').value,
+    tag1: tags[0] || null,
+    tag2: tags[1] || null,
+    tag3: tags[2] || null,
+    link: $('w-link').value || null,
+    image_link: $('w-image-link').value || null
+  };
+  
+  try {
+    const r = await fetch(`/admin/watchlist${authq}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-admin-token': token },
+      body: JSON.stringify(payload)
+    });
+    if (!r.ok) throw new Error('failed to save');
+    closeWatchlistModal();
+    loadWatchlist();
+  } catch (err) {
+    alert('Save failed: ' + err.message);
+  }
+}
+
+async function deleteWatchlistAircraft(icao) {
+  if (!confirm(`Are you sure you want to delete ${icao.toUpperCase()} from the watchlist?`)) return;
+  try {
+    const r = await fetch(`/admin/watchlist/${icao}${authq}`, {
+      method: 'DELETE',
+      headers: { 'x-admin-token': token }
+    });
+    if (!r.ok) throw new Error('failed to delete');
+    loadWatchlist();
+  } catch (err) {
+    alert('Delete failed: ' + err.message);
+  }
+}
+
+// ── Feeders Management JS ──────────────────────────────────────────
+async function loadFeeders() {
+  const tbody = $('feeders-table-body');
+  tbody.innerHTML = '<tr><td colspan="7" style="color:var(--muted)">Loading feeders…</td></tr>';
+  try {
+    const r = await fetch(`/admin/feeders${authq}`, { headers: { 'x-admin-token': token } });
+    if (!r.ok) throw new Error('failed to load');
+    const data = await r.json();
+    
+    tbody.innerHTML = Object.keys(data).length ? Object.entries(data).map(([key, f]) => {
+      const sourceColor = f.source === 'realtime' ? 'var(--green)' : f.source === 'ultrafeeder' ? 'var(--blue-lt)' : 'var(--muted)';
+      const safeF = encodeURIComponent(JSON.stringify(f));
+      return `
+        <tr>
+          <td><b style="color:var(--blue-lt)">${key}</b></td>
+          <td>${f.name}</td>
+          <td><span class="secret-badge" style="background:${f.color};color:#fff;border:none">${f.initials}</span></td>
+          <td><span style="color:${sourceColor};font-weight:600;font-size:11px;text-transform:uppercase">${f.source}</span></td>
+          <td>${f.mlat ? '✓ YES' : '—'}</td>
+          <td>${f.docker_container || '—'}</td>
+          <td style="text-align:right">
+            <button type="button" class="secondary" style="padding:3px 8px;font-size:11px" onclick="editFeeder(this)" data-key="${key}" data-feeder="${safeF}">Edit</button>
+            <button type="button" class="secondary" style="padding:3px 8px;font-size:11px;color:var(--red);border-color:rgba(248,81,73,0.3)" onclick="deleteFeeder('${key}')">Delete</button>
+          </td>
+        </tr>
+      `;
+    }).join('') : '<tr><td colspan="7" style="color:var(--muted);text-align:center">No feeders defined</td></tr>';
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="7" style="color:var(--red)">Failed to load: ${e.message}</td></tr>`;
+  }
+}
+
+function openFeederModal(key = '', f = null) {
+  const title = $('feeder-modal-title');
+  const modal = $('feeder-modal');
+  
+  if (f) {
+    title.textContent = 'Edit Feeder';
+    $('f-key').value = key;
+    $('f-key').disabled = true;
+    $('f-name').value = f.name;
+    $('f-initials').value = f.initials || '';
+    $('f-color').value = f.color || '#3b82f6';
+    $('f-source').value = f.source || 'audit';
+    $('f-public-url').value = f.public_url || '';
+    $('f-detail-url').value = f.detail_url || '';
+    $('f-mlat').checked = !!f.mlat;
+    $('f-docker-container').value = f.docker_container || '';
+  } else {
+    title.textContent = 'Add Feeder';
+    $('f-key').value = '';
+    $('f-key').disabled = false;
+    $('f-name').value = '';
+    $('f-initials').value = '';
+    $('f-color').value = '#3b82f6';
+    $('f-source').value = 'audit';
+    $('f-public-url').value = '';
+    $('f-detail-url').value = '';
+    $('f-mlat').checked = false;
+    $('f-docker-container').value = '';
+  }
+  
+  modal.classList.add('active');
+}
+
+function editFeeder(btn) {
+  const key = btn.dataset.key;
+  const f = JSON.parse(decodeURIComponent(btn.dataset.feeder));
+  openFeederModal(key, f);
+}
+
+function closeFeederModal() {
+  $('feeder-modal').classList.remove('active');
+}
+
+async function saveFeeder(e) {
+  e.preventDefault();
+  const payload = {
+    key: $('f-key').value.toLowerCase(),
+    name: $('f-name').value,
+    initials: $('f-initials').value || null,
+    color: $('f-color').value,
+    source: $('f-source').value,
+    public_url: $('f-public-url').value || null,
+    detail_url: $('f-detail-url').value || null,
+    mlat: $('f-mlat').checked,
+    docker_container: $('f-docker-container').value || null
+  };
+  
+  try {
+    const r = await fetch(`/admin/feeders${authq}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-admin-token': token },
+      body: JSON.stringify(payload)
+    });
+    if (!r.ok) throw new Error('failed to save');
+    closeFeederModal();
+    loadFeeders();
+  } catch (err) {
+    alert('Save failed: ' + err.message);
+  }
+}
+
+async function deleteFeeder(key) {
+  if (!confirm(`Are you sure you want to delete feeder "${key}"?`)) return;
+  try {
+    const r = await fetch(`/admin/feeders/${key}${authq}`, {
+      method: 'DELETE',
+      headers: { 'x-admin-token': token }
+    });
+    if (!r.ok) throw new Error('failed to delete');
+    loadFeeders();
+  } catch (err) {
+    alert('Delete failed: ' + err.message);
+  }
+}
+
+// ── Initialization ────────────────────────────────────────────────
+async function load() {
+  try {
+    const r = await fetch('/admin/settings/data' + authq, { headers: { 'x-admin-token': token } });
+    if (!r.ok) { setStatus('Unauthorized — append ?token=YOUR_TOKEN to the URL.', 'err'); return; }
+    const d = await r.json();
+    schema = d.schema; values = d.values;
+    render(); renderDiag(d.diag); dirty = false; $('save').disabled = true; setStatus('');
+    $('app-version').textContent = d.version ? ('radar-dash v' + d.version) : '';
+  } catch (e) { setStatus('Load failed: ' + e.message, 'err'); }
+}
+
+$('save').addEventListener('click', async () => {
+  $('save').disabled = true; setStatus('Saving…');
+  try {
+    const r = await fetch('/admin/settings' + authq, {
+      method:'POST', headers:{ 'content-type':'application/json', 'x-admin-token': token },
+      body: JSON.stringify(values),
+    });
+    const d = await r.json();
+    if (!r.ok || !d.success) throw new Error(d.error || 'save failed');
+    dirty = false;
+    if (d.requiresRestart) setStatus('Saved. A setting needs a service restart to take effect.', 'warn');
+    else setStatus('Saved.', '');
+    setTimeout(load, 600);
+  } catch (e) { setStatus('Save failed: ' + e.message, 'err'); $('save').disabled = false; }
+});
+$('reset').addEventListener('click', load);
+
+load();
+</script>
+</body>
+</html>

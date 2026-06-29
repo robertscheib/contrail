@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Feeders · {{BRAND_HOST}}</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#0d1117">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<style>
+:root {
+  --bg:      #0d1117; --surface: #161b22; --border: #21262d;
+  --blue:    #3b82f6; --blue-lt: #60a5fa;
+  --green:   #3fb950; --amber:   #f0883e; --danger: #f85149;
+  --muted:   #484f58; --text:    #e6edf3; --text-dim: #8b949e;
+  --font:    ui-monospace, 'Cascadia Code', monospace;
+}
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+html,body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+
+/* Header */
+#header {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 52px; padding: 0 20px;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+}
+#header-left { display: flex; align-items: center; gap: 10px; }
+#header-right { display: flex; align-items: center; gap: 16px; }
+#brand { font-size: 16px; letter-spacing: -0.5px; }
+#brand-main { color: #f0f6ff; }
+#brand-sep  { color: var(--blue); }
+#brand-sub  { color: var(--blue-lt); }
+.back-link { font-size: 12px; color: var(--muted); text-decoration: none; padding: 4px 10px;
+  border: 1px solid var(--border); border-radius: 4px; }
+.back-link:hover { color: var(--blue-lt); border-color: var(--blue); }
+#last-updated { font-size: 11px; color: var(--muted); }
+
+/* Mobile: keep the header on one line and not overflowing */
+@media (max-width: 560px) {
+  #header { padding: 0 12px; }
+  #header-left { gap: 8px; }
+  #header-right { gap: 8px; }
+  #brand { font-size: 14px; }
+  #last-updated { display: none; }      /* footer already shows the timestamp */
+  .hide-narrow { display: none; }        /* personal parent link, desktop only */
+  .back-link { padding: 3px 8px; }
+}
+
+main { max-width: 1100px; margin: 0 auto; padding: 24px 20px 48px; display: flex; flex-direction: column; gap: 20px; }
+
+/* Summary bar */
+#summary-bar {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+  padding: 14px 20px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+}
+#summary-bar .sum-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.2px; }
+.sum-group { display: flex; align-items: center; gap: 8px; }
+.sum-count { font-size: 22px; font-weight: 600; }
+.sum-count.connected { color: var(--green); }
+.sum-count.offline   { color: var(--danger); }
+.sum-count.notinst   { color: var(--muted); }
+#sum-total { font-size: 14px; color: var(--text-dim); }
+
+/* Detection banner */
+#detect-banner {
+  background: rgba(240,136,62,.1); border: 1px solid rgba(240,136,62,.35);
+  border-radius: 6px; padding: 10px 16px; font-size: 12px; color: var(--amber);
+}
+
+/* Grid */
+#grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+@media (max-width: 900px) { #grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { #grid { grid-template-columns: 1fr; } }
+
+/* Cards */
+.feeder-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  padding: 20px; display: flex; flex-direction: column; gap: 12px;
+  border-left: 3px solid var(--border);
+  transition: border-color 0.15s;
+}
+.feeder-card.connected    { border-left-color: var(--green); }
+.feeder-card.offline      { border-left-color: var(--danger); }
+.feeder-card.not_installed { background: var(--bg); border-style: dashed; border-left-color: var(--muted); }
+
+.card-top { display: flex; align-items: center; justify-content: space-between; }
+.card-left { display: flex; align-items: center; gap: 10px; }
+.initials-circle {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.provider-name { font-size: 15px; color: var(--text); font-weight: 500; }
+.provider-name.muted { color: var(--muted); }
+
+.status-pill { display: flex; align-items: center; gap: 5px; font-size: 11px;
+  text-transform: uppercase; letter-spacing: 1px; }
+.pill-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.pill-dot.green  { background: var(--green); }
+.pill-dot.red    { background: var(--danger); }
+.pill-dot.gray   { background: var(--muted); }
+.pill-dot.amber  { background: var(--amber); }
+.status-text.green  { color: var(--green); }
+.status-text.red    { color: var(--danger); }
+.status-text.gray   { color: var(--muted); }
+.status-text.amber  { color: var(--amber); }
+
+.card-stats { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-dim); }
+.stat-line { display: flex; justify-content: space-between; }
+.stat-line .val { color: var(--text); font-weight: 500; }
+.stat-line .muted-val { color: var(--muted); }
+
+.card-note { font-size: 11px; color: var(--muted); line-height: 1.4; }
+
+.card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 2px; }
+.source-badge { font-size: 10px; color: var(--muted); padding: 2px 6px;
+  border: 1px solid var(--border); border-radius: 3px; }
+.docker-badge { font-size: 10px; color: var(--green); padding: 2px 6px;
+  border: 1px solid rgba(63,185,80,.3); border-radius: 3px; }
+.docker-badge.stale { color: var(--amber); border-color: rgba(240,136,62,.3); }
+.view-link { font-size: 12px; color: var(--blue-lt); text-decoration: none; }
+.view-link:hover { text-decoration: underline; }
+.view-link.muted-link { color: var(--muted); }
+.view-link.muted-link:hover { color: var(--text-dim); text-decoration: none; }
+
+/* MLAT section */
+#mlat-section {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden;
+}
+#mlat-header {
+  padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center;
+  justify-content: space-between; cursor: pointer; user-select: none;
+}
+#mlat-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.2px; }
+#mlat-toggle { font-size: 11px; color: var(--muted); }
+#mlat-body { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.mlat-row { display: flex; align-items: center; gap: 12px; font-size: 13px; }
+.mlat-provider { color: var(--text-dim); width: 120px; flex-shrink: 0; }
+.mlat-status { font-weight: 500; }
+.mlat-status.synchronized { color: var(--green); }
+.mlat-status.unstable     { color: var(--amber); }
+.mlat-status.active       { color: var(--green); }
+.mlat-status.healthy      { color: var(--green); }
+.mlat-status.not-connected { color: var(--danger); }
+.mlat-msg { font-size: 11px; color: var(--muted); }
+
+/* Footer */
+#page-footer { font-size: 11px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div id="header-left">
+    <svg viewBox="0 0 52 34" height="28" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <line x1="4" y1="16" x2="23" y2="16" stroke="#60a5fa" stroke-width="2.2"/>
+      <line x1="4" y1="22" x2="23" y2="20" stroke="#60a5fa" stroke-width="1.6" opacity="0.65"/>
+      <circle cx="30" cy="17" r="15" fill="#0a1f3d" stroke="#3b82f6" stroke-width="2.2"/>
+      <circle cx="30" cy="17" r="8.5" fill="#3b82f6"/>
+      <circle cx="30" cy="17" r="3.2" fill="#bfdbfe"/>
+    </svg>
+    <span id="brand"><span id="brand-main">radar</span><span id="brand-sep">/</span><span id="brand-sub">feeders</span></span>
+  </div>
+  <div id="header-right">
+    <span id="last-updated">—</span>
+    {{PARENT_LINK_FEEDER}}
+    <a class="back-link" href="/">← Dashboard</a>
+  </div>
+</div>
+
+<main>
+
+  <!-- Summary bar -->
+  <div id="summary-bar">
+    <span id="sum-total">—</span>
+    <div class="sum-group">
+      <span class="sum-count connected" id="sum-connected">—</span>
+      <span class="sum-label">connected</span>
+    </div>
+    <div class="sum-group" id="sum-degraded-group" style="display:none">
+      <span class="sum-count" style="color:var(--amber)" id="sum-degraded">0</span>
+      <span class="sum-label">degraded</span>
+    </div>
+    <div class="sum-group">
+      <span class="sum-count offline"  id="sum-offline">—</span>
+      <span class="sum-label">offline</span>
+    </div>
+    <div class="sum-group">
+      <span class="sum-count notinst" id="sum-notinst">—</span>
+      <span class="sum-label">not installed</span>
+    </div>
+  </div>
+
+  <!-- Detection banner (off / stale / unavailable) -->
+  <div id="detect-banner" style="display:none"></div>
+
+  <!-- Feeder grid -->
+  <div id="grid"></div>
+
+  <!-- MLAT section -->
+  <div id="mlat-section">
+    <div id="mlat-header" onclick="toggleMlat()">
+      <span id="mlat-title">MLAT Status</span>
+      <span id="mlat-toggle">▾</span>
+    </div>
+    <div id="mlat-body"></div>
+  </div>
+
+  <!-- Footer -->
+  <div id="page-footer">
+    <span id="footer-updated">Last updated: — · auto-refreshes every 30s</span>
+    <span id="footer-station">Station: —</span>
+    <span id="footer-version">radar-dash v{{VERSION}}</span>
+  </div>
+
+</main>
+
+<script>
+// Order + every per-feeder field (colors, docker mapping, mlat flags, computed
+// status) now come from /api/adsb/feeders — the server reads the single catalog
+// (src/data/feeders.json), so nothing here is hardcoded per-feeder anymore.
+let _order = [];
+let _hideUninstalled = false;
+let _history = [];
+
+function statusDot(status) {
+  if (status === 'connected')    return 'green';
+  if (status === 'degraded' || status === 'starting') return 'amber';
+  if (status === 'offline' || status === 'disconnected') return 'red';
+  if (status === 'not_installed') return 'gray';
+  return 'amber';
+}
+
+function statusLabel(status) {
+  if (status === 'connected')     return 'CONNECTED';
+  if (status === 'degraded')      return 'DEGRADED';
+  if (status === 'starting')      return 'STARTING';
+  if (status === 'offline')       return 'OFFLINE';
+  if (status === 'not_installed') return 'NOT INSTALLED';
+  if (status === 'disconnected')  return 'DISCONNECTED';
+  return 'UNKNOWN';
+}
+
+function fmtUptime(secs) {
+  if (!secs || secs < 0) return null;
+  const d = Math.floor(secs / 86400);
+  const h = Math.floor((secs % 86400) / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  if (d > 0) return `${d}d ${h}h ${m}m`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+
+function computeUptimePercentage(logs) {
+  if (logs.length === 0) return 100;
+  const connected = logs.filter(l => l.status === 'connected').length;
+  return Math.round((connected / logs.length) * 100);
+}
+
+function renderUptimeBar(feederKey, history) {
+  const feederLogs = (history || []).filter(h => h.feeder_key === feederKey);
+  const now = Date.now();
+  const bins = [];
+  
+  // Compute 24 hourly bins
+  for (let i = 23; i >= 0; i--) {
+    const binStart = now - (i + 1) * 3600 * 1000;
+    const binEnd = now - i * 3600 * 1000;
+    const logsInBin = feederLogs.filter(l => l.logged_at >= binStart && l.logged_at < binEnd);
+    
+    if (logsInBin.length === 0) {
+      bins.push('gray');
+    } else {
+      const hasOffline = logsInBin.some(l => l.status === 'offline' || l.status === 'disconnected');
+      const allConnected = logsInBin.every(l => l.status === 'connected');
+      if (hasOffline) bins.push('red');
+      else if (allConnected) bins.push('green');
+      else bins.push('amber');
+    }
+  }
+  
+  const pct = computeUptimePercentage(feederLogs);
+  
+  return `
+    <div style="margin-top: 8px;">
+      <div style="font-size: 10px; color: var(--text-dim); margin-bottom: 4px; display: flex; justify-content: space-between;">
+        <span>Uptime (last 24h)</span>
+        <span style="color: ${pct === 100 ? 'var(--green)' : pct > 90 ? 'var(--amber)' : 'var(--danger)'}; font-weight: 600;">${pct}%</span>
+      </div>
+      <div style="display: flex; gap: 2px; height: 10px;">
+        ${bins.map(color => {
+          const bg = color === 'green' ? 'var(--green)' :
+                     color === 'red' ? 'var(--danger)' :
+                     color === 'amber' ? 'var(--amber)' :
+                     'rgba(255,255,255,0.06)';
+          return `<div style="flex: 1; background: ${bg}; border-radius: 1px;" title="${color}"></div>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function healthDot(health) {
+  if (health === 'healthy')   return '<span style="color:var(--green)">●</span>';
+  if (health === 'unhealthy') return '<span style="color:var(--danger)">●</span>';
+  return '<span style="color:var(--amber)">●</span>';
+}
+
+function buildCard(key, f) {
+  const liveStatus = f.status;
+  const cls   = f.installed ? liveStatus : 'not_installed';
+  const dot   = statusDot(liveStatus);
+  const label = statusLabel(liveStatus);
+  const muted = !f.installed ? ' muted' : '';
+
+  // Live docker stats — the server attaches these to docker-backed feeders.
+  const docker  = f.docker || null;
+  const hasDocker = !!docker;
+
+  // Build stat lines
+  const stats = [];
+  if (f.aircraft != null && f.aircraft > 0)
+    stats.push({ label: 'Aircraft', val: `${f.aircraft} (${f.aircraft_adsb ?? '?'} ADS-B · ${f.mlat_aircraft ?? '?'} MLAT)` });
+  if (f.alias)            stats.push({ label: 'Alias',   val: f.alias });
+  if (f.version)          stats.push({ label: 'Version', val: f.version });
+  if (f.piaware_version)  stats.push({ label: 'Version', val: `PiAware ${f.piaware_version}` });
+  if (f.cpu_load != null) stats.push({ label: 'CPU', val: `${f.cpu_load}%` });
+
+  if (hasDocker) {
+    // Live docker stats replace/augment the audit note
+    stats.push({ label: 'Health',   val: `${healthDot(docker.health)} ${docker.health}` });
+    stats.push({ label: 'Uptime',   val: fmtUptime(docker.uptime_seconds) || '—' });
+    if (docker.restarts > 0)
+      stats.push({ label: 'Restarts', val: `<span style="color:${docker.restarts > 5 ? 'var(--danger)' : 'var(--amber)'}">${docker.restarts}</span>` });
+  } else {
+    const uptime = fmtUptime(f.uptime_seconds);
+    if (uptime) stats.push({ label: 'Uptime', val: uptime });
+  }
+
+  const statsHtml = stats.length ? `
+    <div class="card-stats">
+      ${stats.map(s => `<div class="stat-line"><span>${s.label}</span><span class="val">${s.val}</span></div>`).join('')}
+    </div>` : '';
+
+  const uptimeHtml = f.installed ? renderUptimeBar(key, _history) : '';
+
+  const noteHtml = !f.installed
+    ? `<div class="card-note">${f.note || ''}</div>`
+    : (f.detect?.type === 'ultrafeeder' && f.note
+        ? `<div class="card-note">${f.note}</div>`
+        : '');
+
+  // Stats link: normal when running, greyed when the feed isn't, and hidden for
+  // not-installed feeders when the "hide" toggle is on.
+  let linkHtml = '<span></span>';
+  if (f.public_url && !(!f.installed && _hideUninstalled)) {
+    const muted = f.status !== 'connected' ? ' muted-link' : '';
+    linkHtml = `<a class="view-link${muted}" href="${f.public_url}" target="_blank">View stats ↗</a>`;
+  }
+  const detailHtml = f.detail_url ? `<a class="view-link" href="${f.detail_url}" target="_blank">Details →</a>` : '';
+
+  let badge;
+  if (f.source === 'realtime')       badge = `<span class="source-badge">live</span>`;
+  else if (hasDocker)                badge = `<span class="docker-badge${docker.stale ? ' stale' : ''}">docker · live</span>`;
+  else if (f.source === 'ultrafeeder') badge = `<span class="docker-badge">ultrafeeder</span>`;
+  else                               badge = `<span class="source-badge">audit</span>`;
+
+    <div class="feeder-card ${cls}">
+      <div class="card-top">
+        <div class="card-left">
+          <div class="initials-circle" style="background:${f.color}">${f.initials}</div>
+          <span class="provider-name${muted}">${f.name}</span>
+        </div>
+        <div class="status-pill">
+          <div class="pill-dot ${dot}"></div>
+          <span class="status-text ${dot}">${label}</span>
+        </div>
+      </div>
+      ${statsHtml}
+      ${uptimeHtml}
+      ${noteHtml}
+      <div class="card-footer">
+        ${linkHtml}
+        <div style="display:flex;gap:8px;align-items:center">
+          ${detailHtml}
+          ${badge}
+        </div>
+      </div>
+    </div>`;
+}
+
+function buildMlat(feeders) {
+  const rows = [];
+  // MLAT providers = catalog feeders flagged mlat:true, installed, with a status.
+  for (const key of _order) {
+    const f = feeders[key];
+    if (!f || !f.mlat || !f.installed || !f.mlat_status) continue;
+    const s = f.mlat_status.replace(/ /g, '-');
+    const msg = f.mlat_message || '';
+    rows.push(`
+      <div class="mlat-row">
+        <span class="mlat-provider">${f.name}</span>
+        <span class="mlat-status ${s}">${f.mlat_status}</span>
+        ${msg ? `<span class="mlat-msg">${msg}</span>` : ''}
+      </div>`);
+  }
+  return rows.length
+    ? rows.join('')
+    : '<div style="font-size:13px;color:var(--muted)">No MLAT data available</div>';
+}
+
+let _mlatOpen = true;
+function toggleMlat() {
+  _mlatOpen = !_mlatOpen;
+  document.getElementById('mlat-body').style.display  = _mlatOpen ? '' : 'none';
+  document.getElementById('mlat-toggle').textContent = _mlatOpen ? '▾' : '▸';
+}
+
+function renderBanner(d) {
+  const el = document.getElementById('detect-banner');
+  if (!el) return;
+  let msg = '';
+  if (d.detect_mode === 'off')
+    msg = 'Feeder detection is off — showing the manually-enabled list. Pick a detection mode in Settings to auto-detect.';
+  else if (d.docker?.unavailable)
+    msg = 'Docker detection unavailable (' + (d.docker.reason || 'unreachable') + ') — container feeders may be inaccurate.';
+  else if (d.docker?.stale)
+    msg = 'Showing last known docker status (the latest check did not respond).';
+  el.textContent = msg;
+  el.style.display = msg ? '' : 'none';
+}
+
+async function refresh() {
+  try {
+    const [d, history] = await Promise.all([
+      fetch('/api/adsb/feeders').then(r => r.json()),
+      fetch('/api/stats/feeders-history').then(r => r.json()).catch(() => [])
+    ]);
+    _history = history;
+    const feeders = d.feeders || {};
+    _order = d.order || Object.keys(feeders);
+    _hideUninstalled = !!d.hide_uninstalled_links;
+
+    renderBanner(d);
+
+    // Server computes status (incl. docker health) — trust feeders[k].status.
+    const statuses = Object.fromEntries(_order.filter(k => feeders[k]).map(k => [k, feeders[k].status]));
+    const all = Object.keys(statuses);
+    const nConn     = all.filter(k => statuses[k] === 'connected').length;
+    const nDegraded = all.filter(k => statuses[k] === 'degraded' || statuses[k] === 'starting').length;
+    const nOff      = all.filter(k => statuses[k] === 'offline' || statuses[k] === 'disconnected').length;
+    const nNot      = all.filter(k => statuses[k] === 'not_installed').length;
+
+    document.getElementById('sum-total').textContent     = `${all.length} providers`;
+    document.getElementById('sum-connected').textContent = nConn;
+    document.getElementById('sum-offline').textContent   = nOff;
+    document.getElementById('sum-notinst').textContent   = nNot;
+    const dg = document.getElementById('sum-degraded');
+    const dgGroup = document.getElementById('sum-degraded-group');
+    if (dg) dg.textContent = nDegraded;
+    if (dgGroup) dgGroup.style.display = nDegraded > 0 ? '' : 'none';
+
+    // Grid — sort by status
+    const sorted = [...all].sort((a, b) => {
+      const rank = s => s === 'connected' ? 0 : s === 'not_installed' ? 3 : s === 'degraded' || s === 'starting' ? 1 : 2;
+      return rank(statuses[a] || 'zzz') - rank(statuses[b] || 'zzz');
+    });
+    document.getElementById('grid').innerHTML = sorted
+      .map(k => buildCard(k, feeders[k]))
+      .join('');
+
+    // MLAT
+    document.getElementById('mlat-body').innerHTML = buildMlat(feeders);
+
+    // Station footer
+    const st = d.station || {};
+    document.getElementById('footer-station').textContent =
+      `Station: ${feeders.fr24?.alias || 'Home'} · ${st.lat ?? '?'}, ${st.lon ?? '?'}`;
+
+    const ts = new Date().toTimeString().slice(0, 8);
+    document.getElementById('last-updated').textContent  = `Updated: ${ts}`;
+    document.getElementById('footer-updated').textContent = `Last updated: ${ts} · auto-refreshes every 30s`;
+  } catch (e) {
+    console.error('Feeders fetch failed:', e);
+  }
+}
+
+refresh();
+setInterval(refresh, 30_000);
+</script>
+</body>
+</html>

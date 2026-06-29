@@ -1,0 +1,22 @@
+services:
+  radar-dash:
+    image: tempeduck/radar-dash:latest
+    container_name: radar-dash
+    restart: unless-stopped
+    ports:
+      - "3010:3010"
+      # Optional: direct HTTPS for PWA install without a domain (see README →
+      # "PWA / installing the app"). Mount a TRUSTED cert and set HTTPS_CERT/
+      # HTTPS_KEY in .env. Easiest no-cert path is `tailscale serve` instead.
+      # - "3443:3443"
+    volumes:
+      # Persistent database storage
+      - ./data:/app/data
+      # Optional: mount a trusted TLS cert here for the HTTPS PWA listener.
+      # - ./certs:/app/certs:ro
+      # Optional: Mount the host Docker socket if running on the same VM
+      # as your aggregator feeders. This allows radar-dash to auto-detect
+      # your feeders locally without needing SSH keys or passwords.
+      # - /var/run/docker.sock:/var/run/docker.sock
+    env_file:
+      - .env

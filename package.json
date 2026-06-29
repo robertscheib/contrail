@@ -1,0 +1,21 @@
+{
+  "name": "radar-dash",
+  "version": "1.10.0",
+  "description": "Self-hosted ADS-B flight tracking dashboard for tar1090/readsb receivers",
+  "license": "MIT",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "type": "commonjs",
+  "dependencies": {
+    "better-sqlite3": "^12.10.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.1",
+    "helmet": "^8.0.0",
+    "multer": "^2.1.1",
+    "node-fetch": "^2.7.0"
+  }
+}

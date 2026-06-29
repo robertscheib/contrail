@@ -1,0 +1,21 @@
+[Unit]
+Description=radar-dash ADS-B dashboard
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Adjust User, paths, and the node binary for your system.
+User=youruser
+WorkingDirectory=/opt/radar-dash
+# Config is read from .env in WorkingDirectory; or point at any env file:
+# EnvironmentFile=/opt/radar-dash/.env
+ExecStart=/usr/bin/node /opt/radar-dash/server.js
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=radar-dash
+
+[Install]
+WantedBy=multi-user.target

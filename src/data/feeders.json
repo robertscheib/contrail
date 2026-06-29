@@ -1,0 +1,266 @@
+[
+  {
+    "key": "fr24",
+    "name": "FlightRadar24",
+    "color": "#f0883e",
+    "initials": "FR",
+    "public_url": "https://www.flightradar24.com/account/feed-stats",
+    "detail_url": "/feeder/fr24.html",
+    "mlat": true,
+    "detect": {
+      "type": "realtime",
+      "port": 8754,
+      "path": "/monitor.json",
+      "probe": "fr24"
+    }
+  },
+  {
+    "key": "piaware",
+    "name": "FlightAware",
+    "color": "#3b82f6",
+    "initials": "FA",
+    "public_url": "https://flightaware.com/adsb/stats/user/",
+    "detail_url": "/feeder/piaware.html",
+    "mlat": true,
+    "detect": {
+      "type": "realtime",
+      "port": 8081,
+      "path": "/status.json",
+      "probe": "piaware"
+    }
+  },
+  {
+    "key": "adsbexchange",
+    "name": "ADSBexchange",
+    "color": "#f5a623",
+    "initials": "AX",
+    "public_url": "https://www.adsbexchange.com/myip/",
+    "mlat": true,
+    "mlat_status": "active",
+    "note": "Via ultrafeeder",
+    "detect": {
+      "type": "ultrafeeder",
+      "match": "adsbexchange.com"
+    }
+  },
+  {
+    "key": "adsbfi",
+    "name": "adsb.fi",
+    "color": "#16b8a6",
+    "initials": "fi",
+    "public_url": "https://adsb.fi/",
+    "mlat": true,
+    "mlat_status": "active",
+    "note": "Via ultrafeeder",
+    "detect": {
+      "type": "ultrafeeder",
+      "match": "adsb.fi"
+    }
+  },
+  {
+    "key": "adsblol",
+    "name": "adsb.lol",
+    "color": "#e879f9",
+    "initials": "LOL",
+    "public_url": "https://adsb.lol/",
+    "mlat": true,
+    "mlat_status": "active",
+    "note": "Via ultrafeeder",
+    "detect": {
+      "type": "ultrafeeder",
+      "match": "adsb.lol"
+    }
+  },
+  {
+    "key": "airplaneslive",
+    "name": "airplanes.live",
+    "color": "#22c55e",
+    "initials": "AL",
+    "public_url": "https://airplanes.live/",
+    "mlat": true,
+    "mlat_status": "active",
+    "note": "Via ultrafeeder",
+    "detect": {
+      "type": "ultrafeeder",
+      "match": "airplanes.live"
+    }
+  },
+  {
+    "key": "planespotters",
+    "name": "Planespotters",
+    "color": "#0ea5e9",
+    "initials": "PS",
+    "public_url": "https://www.planespotters.net/",
+    "mlat": true,
+    "mlat_status": "active",
+    "note": "Via ultrafeeder",
+    "detect": {
+      "type": "ultrafeeder",
+      "match": "planespotters"
+    }
+  },
+  {
+    "key": "theairtraffic",
+    "name": "TheAirTraffic",
+    "color": "#f97316",
+    "initials": "AT",
+    "public_url": "https://theairtraffic.com/",
+    "mlat": true,
+    "mlat_status": "active",
+    "note": "Via ultrafeeder",
+    "detect": {
+      "type": "ultrafeeder",
+      "match": "theairtraffic"
+    }
+  },
+  {
+    "key": "radarplane",
+    "name": "RadarPlane",
+    "color": "#eab308",
+    "initials": "RP",
+    "public_url": "https://radarplane.com/",
+    "mlat": true,
+    "mlat_status": "active",
+    "note": "Via ultrafeeder",
+    "detect": {
+      "type": "ultrafeeder",
+      "match": "radarplane"
+    }
+  },
+  {
+    "key": "flyitalyadsb",
+    "name": "Fly Italy ADSB",
+    "color": "#ef4444",
+    "initials": "FI",
+    "public_url": "https://flyitalyadsb.com/",
+    "mlat": true,
+    "mlat_status": "active",
+    "note": "Via ultrafeeder",
+    "detect": {
+      "type": "ultrafeeder",
+      "match": "flyitalyadsb"
+    }
+  },
+  {
+    "key": "hpradar",
+    "name": "HPRadar",
+    "color": "#14b8a6",
+    "initials": "HP",
+    "public_url": "https://hpradar.com/",
+    "mlat": true,
+    "mlat_status": "active",
+    "note": "Via ultrafeeder",
+    "detect": {
+      "type": "ultrafeeder",
+      "match": "hpradar"
+    }
+  },
+  {
+    "key": "avdelphi",
+    "name": "AVDelphi",
+    "color": "#a78bfa",
+    "initials": "AV",
+    "public_url": "https://www.avdelphi.com/",
+    "mlat": false,
+    "note": "Via ultrafeeder",
+    "detect": {
+      "type": "ultrafeeder",
+      "match": "avdelphi"
+    }
+  },
+  {
+    "key": "planefinder",
+    "name": "PlaneFinder",
+    "color": "#3fb9b9",
+    "initials": "PF",
+    "public_url": "https://planefinder.net/account/receivers",
+    "mlat": false,
+    "detect": {
+      "type": "docker",
+      "container": "pfclient"
+    }
+  },
+  {
+    "key": "adsbhub",
+    "name": "ADSBhub",
+    "color": "#8b5cf6",
+    "initials": "AH",
+    "public_url": "https://www.adsbhub.org/",
+    "mlat": false,
+    "detect": {
+      "type": "docker",
+      "container": "adsbhub"
+    }
+  },
+  {
+    "key": "radarbox",
+    "name": "AirNav RadarBox",
+    "color": "#ef4444",
+    "initials": "RB",
+    "public_url": "https://www.radarbox.com/station",
+    "mlat": false,
+    "detect": {
+      "type": "docker",
+      "container": "airnavradar"
+    }
+  },
+  {
+    "key": "radarvirtuel",
+    "name": "RadarVirtuel",
+    "color": "#6b7280",
+    "initials": "RV",
+    "public_url": "https://www.radarvirtuel.com/",
+    "mlat": true,
+    "mlat_status": "active",
+    "detect": {
+      "type": "docker",
+      "container": "radarvirtuel"
+    }
+  },
+  {
+    "key": "planewatch",
+    "name": "Plane.watch",
+    "color": "#3b82f6",
+    "initials": "PW",
+    "public_url": "https://plane.watch/",
+    "mlat": true,
+    "mlat_status": "healthy",
+    "detect": {
+      "type": "docker",
+      "container": "planewatch"
+    }
+  },
+  {
+    "key": "opensky",
+    "name": "OpenSky Network",
+    "color": "#484f58",
+    "initials": "OS",
+    "public_url": "https://opensky-network.org/my-opensky",
+    "mlat": false,
+    "detect": {
+      "type": "static"
+    }
+  },
+  {
+    "key": "adsbone",
+    "name": "ADS-B One",
+    "color": "#484f58",
+    "initials": "A1",
+    "public_url": "https://adsb.one/",
+    "mlat": false,
+    "detect": {
+      "type": "static"
+    }
+  },
+  {
+    "key": "airframes",
+    "name": "Airframes",
+    "color": "#484f58",
+    "initials": "AF",
+    "public_url": "https://airframes.io/",
+    "mlat": false,
+    "detect": {
+      "type": "static"
+    }
+  }
+]

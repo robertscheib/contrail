@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FR24 Feeder · {{BRAND_HOST}}</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root {
+  --bg:      #0d1117; --surface: #161b22; --border: #21262d;
+  --blue:    #3b82f6; --blue-lt: #60a5fa;
+  --green:   #3fb950; --amber:   #f0883e; --danger: #f85149;
+  --muted:   #484f58; --text:    #e6edf3; --text-dim: #8b949e;
+  --font:    ui-monospace, 'Cascadia Code', monospace;
+}
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+html,body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+
+#header {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 52px; padding: 0 20px;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+}
+#header-left  { display: flex; align-items: center; gap: 10px; }
+#brand { font-size: 16px; letter-spacing: -0.5px; }
+#brand-main   { color: #f0f6ff; }
+#brand-sep    { color: var(--blue); }
+#brand-sub    { color: var(--blue-lt); }
+.back-link { font-size: 12px; color: var(--muted); text-decoration: none; padding: 4px 10px;
+  border: 1px solid var(--border); border-radius: 4px; }
+.back-link:hover { color: var(--blue-lt); border-color: var(--blue); }
+#last-updated { font-size: 11px; color: var(--muted); }
+
+main { max-width: 900px; margin: 0 auto; padding: 24px 20px 48px; display: flex; flex-direction: column; gap: 20px; }
+
+/* Hero */
+#hero {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  padding: 32px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+#hero-dot { width: 24px; height: 24px; border-radius: 50%; background: var(--muted); transition: background 0.3s; }
+#hero-dot.green { background: var(--green); }
+#hero-dot.amber { background: var(--amber); }
+#hero-dot.red   { background: var(--danger); }
+#hero-status { font-size: 32px; font-weight: 700; letter-spacing: 2px; color: var(--text); }
+#hero-alias  { font-size: 18px; color: var(--blue-lt); }
+#hero-label  { font-size: 12px; color: var(--muted); }
+
+/* Stat grid */
+#stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+@media (max-width: 600px) { #stat-grid { grid-template-columns: repeat(2, 1fr); } }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+  padding: 16px 18px; display: flex; flex-direction: column; gap: 6px;
+}
+.stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; }
+.stat-value { font-size: 22px; font-weight: 500; color: var(--text); }
+.stat-value.accent { color: var(--blue-lt); }
+.stat-value.sm     { font-size: 14px; }
+
+/* Bottom columns */
+#bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 600px) { #bottom { grid-template-columns: 1fr; } }
+.panel {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden;
+}
+.panel-header { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 11px;
+  color: var(--muted); text-transform: uppercase; letter-spacing: 1.2px; }
+.panel-body  { padding: 16px; }
+#map { height: 200px; border-radius: 0 0 0 6px; background: #0d1117; }
+.no-map { height: 200px; display: flex; align-items: center; justify-content: center;
+  font-size: 12px; color: var(--muted); }
+.link-row { display: flex; flex-direction: column; gap: 10px; }
+.ext-link {
+  display: flex; flex-direction: column; gap: 2px;
+  text-decoration: none; padding: 10px 12px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+  transition: border-color 0.15s;
+}
+.ext-link:hover { border-color: var(--blue); }
+.ext-link-label { font-size: 14px; color: var(--blue-lt); }
+.ext-link-note  { font-size: 11px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div id="header-left">
+    <svg viewBox="0 0 52 34" height="28" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <line x1="4" y1="16" x2="23" y2="16" stroke="#60a5fa" stroke-width="2.2"/>
+      <line x1="4" y1="22" x2="23" y2="20" stroke="#60a5fa" stroke-width="1.6" opacity="0.65"/>
+      <circle cx="30" cy="17" r="15" fill="#0a1f3d" stroke="#3b82f6" stroke-width="2.2"/>
+      <circle cx="30" cy="17" r="8.5" fill="#3b82f6"/>
+      <circle cx="30" cy="17" r="3.2" fill="#bfdbfe"/>
+    </svg>
+    <span id="brand"><span id="brand-main">radar</span><span id="brand-sep">/</span><span id="brand-sub">fr24 feeder</span></span>
+  </div>
+  <div style="display:flex;align-items:center;gap:16px">
+    <span id="last-updated">—</span>
+    {{PARENT_LINK_FEEDER}}
+    <a class="back-link" href="/feeder/">← All Feeders</a>
+    <a class="back-link" href="/">← Dashboard</a>
+  </div>
+</div>
+
+<main>
+
+  <!-- Hero -->
+  <div id="hero">
+    <div id="hero-dot"></div>
+    <div id="hero-status">—</div>
+    <div id="hero-alias">—</div>
+    <div id="hero-label">FR24 · FlightRadar24 Feeder</div>
+  </div>
+
+  <!-- Stat grid -->
+  <div id="stat-grid">
+    <div class="stat-card">
+      <div class="stat-label">Aircraft Fed</div>
+      <div class="stat-value accent" id="s-ac">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">ADS-B</div>
+      <div class="stat-value" id="s-adsb">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">MLAT / Other</div>
+      <div class="stat-value" id="s-mlat">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Receiver</div>
+      <div class="stat-value sm" id="s-rx">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Version</div>
+      <div class="stat-value sm" id="s-ver">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Uptime</div>
+      <div class="stat-value sm" id="s-uptime">—</div>
+    </div>
+  </div>
+
+  <!-- Bottom -->
+  <div id="bottom">
+    <div class="panel">
+      <div class="panel-header">Station Location</div>
+      <div id="map-or-none"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">Links</div>
+      <div class="panel-body">
+        <div class="link-row">
+          <a class="ext-link" id="link-fr24" href="https://www.flightradar24.com/account/feed-stats" target="_blank">
+            <span class="ext-link-label">View on FlightRadar24 ↗</span>
+            <span class="ext-link-note">Your feeder stats page</span>
+          </a>
+          <a class="ext-link" href="/fr24/" target="_blank">
+            <span class="ext-link-label">FR24 Feed Admin ↗</span>
+            <span class="ext-link-note">Local admin UI · may not work remotely</span>
+          </a>
+          <a class="ext-link" href="/">
+            <span class="ext-link-label">← Back to Dashboard</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+let _map = null;
+let _marker = null;
+
+function fmtUptime(secs) {
+  if (!secs) return '—';
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+function setText(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val ?? '—';
+}
+
+function initMap(lat, lon) {
+  const container = document.getElementById('map-or-none');
+  container.innerHTML = '<div id="map"></div>';
+  _map = L.map('map', {
+    center: [lat, lon], zoom: 10,
+    scrollWheelZoom: false, dragging: false,
+    zoomControl: false, attributionControl: false,
+  });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    subdomains: 'abcd', maxZoom: 19,
+  }).addTo(_map);
+  const icon = L.divIcon({ className: '', html:
+    '<div style="width:12px;height:12px;border-radius:50%;background:#3b82f6;border:2px solid #bfdbfe;box-shadow:0 0 6px #3b82f6"></div>',
+    iconSize: [12, 12], iconAnchor: [6, 6] });
+  _marker = L.marker([lat, lon], { icon }).addTo(_map);
+}
+
+async function refresh() {
+  try {
+    const r = await fetch('/api/adsb/feeders');
+    const d = await r.json();
+    const f  = d.fr24;
+    const st = d.station;
+
+    // Hero
+    const dot = document.getElementById('hero-dot');
+    const status = f?.feed_status || 'unknown';
+    dot.className = status === 'connected' ? 'green' : status === 'disconnected' ? 'red' : 'amber';
+    setText('hero-status', status.toUpperCase());
+    setText('hero-alias',  f?.feed_alias || '—');
+
+    // Stats
+    setText('s-ac',     f?.feed_num_ac_tracked          ?? '—');
+    setText('s-adsb',   f?.feed_num_ac_adsb_tracked     ?? '—');
+    setText('s-mlat',   f?.feed_num_ac_non_adsb_tracked ?? '—');
+    setText('s-rx',     f?.rx_connected === '1' ? 'connected' : (f ? 'disconnected' : '—'));
+    setText('s-ver',    f ? `${f.build_version || '—'} (${f.build_revision || '—'})` : '—');
+    setText('s-uptime', fmtUptime(parseInt(f?.local_tods || '0', 10)));
+
+    // Map — use station coords (FR24 monitor.json has no lat/lon)
+    if (st?.lat && st?.lon && !_map) {
+      initMap(st.lat, st.lon);
+    } else if (!st?.lat) {
+      const c = document.getElementById('map-or-none');
+      if (!_map && c) c.innerHTML = '<div class="no-map">coordinates unavailable</div>';
+    }
+
+    // Last updated
+    const ts = new Date().toTimeString().slice(0, 8);
+    document.getElementById('last-updated').textContent = `Last updated: ${ts} · auto-refreshes every 30s`;
+  } catch (e) {
+    console.error('Feeder fetch failed:', e);
+  }
+}
+
+refresh();
+setInterval(refresh, 30_000);
+</script>
+<footer style="text-align:center;padding:18px 0 26px;font-size:11px;color:var(--muted)">radar-dash v{{VERSION}}</footer>
+</body>
+</html>
