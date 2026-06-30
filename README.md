@@ -27,6 +27,38 @@ npm start                  # serves on http://localhost:3010
 
 Open `http://localhost:3010`.
 
+## Running in Docker
+
+You can run `radar-dash` easily using the official prebuilt Docker image `tempeduck/radar-dash:latest`.
+
+### 1. Set up the compose file
+Copy the example compose file:
+```bash
+cp docker-compose.yml.example docker-compose.yml
+```
+
+### 2. Configure environment
+Copy `.env.example` to `.env` and configure it:
+```bash
+cp .env.example .env
+```
+At a minimum, set `ADSB_HOST` (e.g., your receiver's IP) and `ADSB_STATION_LAT/LON`.
+
+### 3. Start the container
+```bash
+docker compose up -d
+```
+The dashboard will be available on `http://localhost:3010`.
+
+#### Optional: Local Feeder Detection
+If you run the dashboard on the **same** machine as your ADS-B receiver/feeders, you can mount the host's Docker socket in `docker-compose.yml` to allow the dashboard to auto-detect your feeder containers without SSH keys or passwords:
+```yaml
+    volumes:
+      - ./data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
+```
+Then, set **Feeder Detection Mode** to `local` in the settings page.
+
 ## PWA / installing the app
 
 The dashboard is a **Progressive Web App** — it can be installed to a phone/desktop

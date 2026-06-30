@@ -2658,6 +2658,10 @@ async function checkForUpdate() {
 checkForUpdate();
 setInterval(checkForUpdate, 6 * 3600 * 1000);
 </script>
-<footer style="text-align:center;padding:18px 0 26px;font-size:11px;color:var(--muted)">radar-dash v{{VERSION}}</footer>
+<footer style="text-align:center;padding:18px 0 26px;font-size:11px;color:var(--muted)">
+  radar-dash v{{VERSION}} · 
+  <a href="https://github.com/tempeduck/contrail" target="_blank" style="color:var(--muted);text-decoration:none" onmouseover="this.style.color='var(--blue-lt)'" onmouseout="this.style.color='var(--muted)'">GitHub</a> · 
+  <a href="https://github.com/tempeduck/contrail/issues" target="_blank" style="color:var(--muted);text-decoration:none" onmouseover="this.style.color='var(--blue-lt)'" onmouseout="this.style.color='var(--muted)'">Support &amp; Issues</a>
+</footer>
 </body>
 </html>
