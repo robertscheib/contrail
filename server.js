@@ -1117,8 +1117,18 @@ app.get('/admin/feeders', (req, res) => {
     const filePath = path.join(__dirname, 'src', 'data', 'feeders.json');
     const content = fs.readFileSync(filePath, 'utf8');
     const catalog = JSON.parse(content);
-    // Convert array to object for the UI and test scripts
-    const feedersObj = Object.fromEntries(catalog.map(f => [f.key, f]));
+    
+    // Map nested 'detect' properties to flat 'source' and 'docker_container' for the UI
+    const feedersObj = Object.fromEntries(catalog.map(f => {
+      const source = f.detect ? (f.detect.type === 'static' ? 'audit' : (f.detect.type === 'docker' ? 'audit' : f.detect.type)) : 'audit';
+      const docker_container = (f.detect && f.detect.type === 'docker') ? f.detect.container : null;
+      return [f.key, {
+        ...f,
+        source,
+        docker_container
+      }];
+    }));
+    
     res.json(feedersObj);
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -1232,6 +1242,9 @@ const BRAND_TOKENS = {
   '{{PARENT_LINK}}':  PARENT_LINK,
   '{{PARENT_LINK_FEEDER}}': PARENT_LINK_FEEDER,
   '{{VERSION}}':      APP_VERSION,
+  '{{GRAFANA_URL}}':    process.env.GRAFANA_URL || '#',
+  '{{PROMETHEUS_URL}}':  process.env.PROMETHEUS_URL || '#',
+  '{{INFLUXDB_URL}}':    process.env.INFLUXDB_URL || '#',
 };
 
 const _htmlCache = new Map();
@@ -1247,6 +1260,7 @@ function sendBranded(res, relPath, type = 'html') {
 
 // Branded HTML routes must precede express.static so token substitution always runs.
 app.get(['/', '/index.html'], (req, res) => sendBranded(res, 'index.html'));
+app.get(['/links', '/links.html'], (req, res) => sendBranded(res, 'links.html'));
 app.get(['/feeder', '/feeder/', '/feeder/index.html'], (req, res) => sendBranded(res, 'feeder/index.html'));
 app.get('/feeder/fr24.html', (req, res) => sendBranded(res, 'feeder/fr24.html'));
 app.get('/feeder/piaware.html', (req, res) => sendBranded(res, 'feeder/piaware.html'));

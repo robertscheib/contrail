@@ -357,6 +357,8 @@ table.ht .ht-muted { color: var(--muted); }
     <a id="update-badge" href="#" target="_blank" rel="noopener" title="A newer version is available — click for update instructions"
        style="display:none;font-size:12px;color:var(--amber);text-decoration:none;padding:3px 8px;border:1px solid var(--amber);border-radius:4px;font-weight:600"
        onmouseover="this.style.background='rgba(240,136,62,0.12)'" onmouseout="this.style.background='transparent'">↑ Update</a>
+    <a href="{{GRAFANA_URL}}" target="_blank" title="Grafana Receiver Performance" style="font-size:12px;color:var(--text-dim);text-decoration:none;padding:3px 8px;border:1px solid var(--border);border-radius:4px" onmouseover="this.style.color='var(--blue-lt)';this.style.borderColor='var(--blue)'" onmouseout="this.style.color='var(--text-dim)';this.style.borderColor='var(--border)'">📊 Grafana</a>
+    <a href="/links" style="font-size:12px;color:var(--text-dim);text-decoration:none;padding:3px 8px;border:1px solid var(--border);border-radius:4px" onmouseover="this.style.color='var(--blue-lt)';this.style.borderColor='var(--blue)'" onmouseout="this.style.color='var(--text-dim)';this.style.borderColor='var(--border)'">🔗 Service Links</a>
     <a href="/feeder/" style="font-size:12px;color:var(--text-dim);text-decoration:none;padding:3px 8px;border:1px solid var(--border);border-radius:4px" onmouseover="this.style.color='var(--blue-lt)';this.style.borderColor='var(--blue)'" onmouseout="this.style.color='var(--text-dim)';this.style.borderColor='var(--border)'">Feeders</a>
     <a href="/admin/settings" title="Settings (Cloudflare Access)" style="font-size:12px;color:var(--text-dim);text-decoration:none;padding:3px 8px;border:1px solid var(--border);border-radius:4px" onmouseover="this.style.color='var(--blue-lt)';this.style.borderColor='var(--blue)'" onmouseout="this.style.color='var(--text-dim)';this.style.borderColor='var(--border)'">⚙ Settings</a>
     <span id="last-updated">Last updated: —</span>
@@ -387,12 +389,20 @@ table.ht .ht-muted { color: var(--muted); }
     <div class="stat-value" id="s-rate">—</div>
   </div>
   <div class="stat-card">
+    <div class="stat-label">SDR Signal</div>
+    <div class="stat-value" id="s-signal">—</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">SDR Noise</div>
+    <div class="stat-value" id="s-noise">—</div>
+  </div>
+  <div class="stat-card" id="card-fr24" style="display:none">
     <div class="stat-label">FR24</div>
     <div id="s-fr24" class="feeder-pill">
       <div class="feeder-status-line"><div class="feeder-dot gray"></div><span>—</span></div>
     </div>
   </div>
-  <div class="stat-card">
+  <div class="stat-card" id="card-piaware" style="display:none">
     <div class="stat-label">PiAware</div>
     <div id="s-piaware" class="feeder-pill">
       <div class="feeder-status-line"><div class="feeder-dot gray"></div><span>—</span></div>
@@ -406,6 +416,7 @@ table.ht .ht-muted { color: var(--muted); }
     <button class="tab active" data-src="/tar1090/?hideSidebar&amp;hideButtons"                     data-label="Live map">✈ Live</button>
     <button class="tab"        data-src="/tar1090/?hideSidebar&amp;hideButtons&amp;heatmap&amp;realheat" data-label="Heat map">◉ Heat Map</button>
     <button class="tab"        data-src="/tar1090/?hideSidebar&amp;hideButtons&amp;pTracks"             data-label="Track lines">≋ Tracks</button>
+    <button class="tab"        data-src="/3d/"                                                         data-label="3D Globe">🪐 3D Globe</button>
     <button class="tab"        data-paths="1" data-mode="lines"                                        data-label="Flight paths">⇲ Paths</button>
     <button class="tab"        data-paths="1" data-mode="heat"                                         data-label="Path heat map">◍ Path Heat</button>
     <button class="tab"        data-src="/tar1090/?hideButtons&amp;replay"                              data-label="Replay">▶ Replay</button>
@@ -423,6 +434,8 @@ table.ht .ht-muted { color: var(--muted); }
     <a id="ql-current" href="/tar1090/" target="_blank">↗ Live map</a>
     <span class="sep">·</span>
     <a href="/tar1090/" target="_blank">tar1090</a>
+    <span class="sep">·</span>
+    <a href="/3d/" target="_blank">3D Globe</a>
     <span class="sep">·</span>
     <a href="/skyaware/" target="_blank">SkyAware</a>
     <span class="sep">·</span>
@@ -519,6 +532,24 @@ table.ht .ht-muted { color: var(--muted); }
           <span class="svc-icon">📊</span>
           <span class="svc-name">Graphs</span>
           <span class="svc-path">/graphs1090/</span>
+          <span class="svc-open">↗</span>
+        </a>
+        <a class="svc-cell" data-svc="grafana" href="{{GRAFANA_URL}}" target="_blank">
+          <span class="svc-icon">📈</span>
+          <span class="svc-name">Grafana Stats</span>
+          <span class="svc-path">/grafana/</span>
+          <span class="svc-open">↗</span>
+        </a>
+        <a class="svc-cell" data-svc="prometheus" href="{{PROMETHEUS_URL}}" target="_blank">
+          <span class="svc-icon">🔥</span>
+          <span class="svc-name">Prometheus</span>
+          <span class="svc-path">:9090/</span>
+          <span class="svc-open">↗</span>
+        </a>
+        <a class="svc-cell" data-svc="influxdb" href="{{INFLUXDB_URL}}" target="_blank">
+          <span class="svc-icon">🛢️</span>
+          <span class="svc-name">InfluxDB</span>
+          <span class="svc-path">:8086/</span>
           <span class="svc-open">↗</span>
         </a>
         <a class="svc-cell" data-svc="planefence" href="/planefence/" target="_blank">
@@ -820,6 +851,7 @@ function fmtNum(n) {
 }
 
 let _firstLoad = true;
+let _installedFeeders = { fr24: false, piaware: false };
 
 function animateCount(el, to) {
   if (!_firstLoad) { el.textContent = fmtNum(to); return; }
@@ -881,7 +913,24 @@ async function pollLive() {
     $('s-range').textContent = d.max_range_nm != null ? `${d.max_range_nm} nm` : '—';
     $('s-rate').textContent  = d.msg_rate     != null ? d.msg_rate.toFixed(1)  : '—';
 
+    $('s-signal').textContent = d.signal != null ? `${d.signal.toFixed(1)} dBFS` : '—';
+    $('s-noise').textContent  = d.noise != null  ? `${d.noise.toFixed(1)} dBFS`  : '—';
+
+    if (d.signal != null) {
+      $('s-signal').className = 'stat-value ' + (d.signal > -15 ? 'green' : d.signal > -25 ? 'blue' : 'amber');
+    }
+    if (d.noise != null) {
+      $('s-noise').className = 'stat-value ' + (d.noise < -35 ? 'green' : d.noise < -28 ? 'blue' : 'amber');
+    }
+
+    const fr24Installed = _installedFeeders.fr24;
+    const fr24Ok = d.feeders?.fr24 && d.feeders.fr24.status === 'connected';
+    $('card-fr24').style.display = (fr24Installed && !fr24Ok) ? '' : 'none';
     renderFeeder($('s-fr24'),   d.feeders?.fr24,   'FR24');
+
+    const piawareInstalled = _installedFeeders.piaware;
+    const piawareOk = d.feeders?.piaware && d.feeders.piaware.status === 'connected';
+    $('card-piaware').style.display = (piawareInstalled && !piawareOk) ? '' : 'none';
     renderFeeder($('s-piaware'),d.feeders?.piaware,'piaware');
 
     setUpdatedAt();
@@ -1023,6 +1072,27 @@ let pathsMap = null, pathsLayer = null, heatLayer = null, pathsTimer = null;
 let pathsMode = 'lines', pathsData = null;
 const STATION = { lat: 41.6993, lon: -88.1081 };  // overwritten from API station
 
+let outlineLayer = null;
+async function loadOutline() {
+  try {
+    const r = await fetch('/api/adsb/outline');
+    const d = await r.json();
+    if (d.actualRange?.last24h?.points) {
+      const coords = d.actualRange.last24h.points.map(p => [p[0], p[1]]);
+      if (outlineLayer) outlineLayer.remove();
+      outlineLayer = L.polygon(coords, {
+        color: '#3b82f6',
+        weight: 1.5,
+        fillColor: '#3b82f6',
+        fillOpacity: 0.08,
+        interactive: false
+      }).addTo(pathsMap);
+    }
+  } catch (e) {
+    console.warn('[outline] failed to load range outline:', e);
+  }
+}
+
 function initPathsMap() {
   if (pathsMap) return;
   pathsMap = L.map('paths-map', { zoomControl: true, attributionControl: false })
@@ -1033,6 +1103,7 @@ function initPathsMap() {
   const legend = L.control({ position: 'topright' });
   legend.onAdd = () => { const d = L.DomUtil.create('div', 'paths-legend'); d.id = 'paths-legend'; return d; };
   legend.addTo(pathsMap);
+  loadOutline();
 }
 
 function setLegend(data) {
@@ -1199,7 +1270,12 @@ async function pollServices() {
       fr24:       d.feeders?.fr24,
       piaware:    d.feeders?.piaware,
       planefence: d.services?.planefence,
+      grafana:    d.services?.grafana,
+      prometheus: d.services?.prometheus,
+      influxdb:   d.services?.influxdb,
     };
+    _installedFeeders.fr24 = !!d.feeders?.fr24?.installed;
+    _installedFeeders.piaware = !!d.feeders?.piaware?.installed;
     for (const [key, s] of Object.entries(state)) {
       const cell = document.querySelector(`.svc-cell[data-svc="${key}"]`);
       if (!cell || !s) continue;
@@ -2249,15 +2325,19 @@ async function selectAircraft(hex, flight = '') {
   // Update map iframe to focus on this aircraft in tar1090
   const iframe = $('map-iframe');
   if (iframe) {
-    try {
-      // Set the hash in tar1090 to select the plane instantly without a full iframe reload
-      if (iframe.contentWindow && iframe.contentWindow.location) {
-        iframe.contentWindow.location.hash = `#${_selectedHex}`;
-      } else {
+    const activeTab = document.querySelector('#tab-bar .tab.active');
+    const isTar1090 = activeTab && activeTab.getAttribute('data-src') && activeTab.getAttribute('data-src').startsWith('/tar1090');
+    if (isTar1090) {
+      try {
+        // Set the hash in tar1090 to select the plane instantly without a full iframe reload
+        if (iframe.contentWindow && iframe.contentWindow.location) {
+          iframe.contentWindow.location.hash = `#${_selectedHex}`;
+        } else {
+          iframe.src = `/tar1090/?hideSidebar&hideButtons&select=ac-${_selectedHex}`;
+        }
+      } catch (e) {
         iframe.src = `/tar1090/?hideSidebar&hideButtons&select=ac-${_selectedHex}`;
       }
-    } catch (e) {
-      iframe.src = `/tar1090/?hideSidebar&hideButtons&select=ac-${_selectedHex}`;
     }
     
     const qlLink = $('ql-current');
@@ -2287,14 +2367,18 @@ function clearSelectedAircraft() {
   
   const iframe = $('map-iframe');
   if (iframe) {
-    try {
-      if (iframe.contentWindow && iframe.contentWindow.location) {
-        iframe.contentWindow.location.hash = '';
-      } else {
+    const activeTab = document.querySelector('#tab-bar .tab.active');
+    const isTar1090 = activeTab && activeTab.getAttribute('data-src') && activeTab.getAttribute('data-src').startsWith('/tar1090');
+    if (isTar1090) {
+      try {
+        if (iframe.contentWindow && iframe.contentWindow.location) {
+          iframe.contentWindow.location.hash = '';
+        } else {
+          iframe.src = '/tar1090/?hideSidebar&hideButtons';
+        }
+      } catch (e) {
         iframe.src = '/tar1090/?hideSidebar&hideButtons';
       }
-    } catch (e) {
-      iframe.src = '/tar1090/?hideSidebar&hideButtons';
     }
     
     const qlLink = $('ql-current');

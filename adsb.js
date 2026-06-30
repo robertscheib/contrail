@@ -113,6 +113,10 @@ const getLive = withCache('live', 25000, async () => {
   const totalAccepted = (accepted1min[0] || 0) + (accepted1min[1] || 0);
   const msgRate = Math.round((totalAccepted / 60) * 10) / 10;
 
+  const signal = statsData.last1min?.local?.signal ?? null;
+  const noise = statsData.last1min?.local?.noise ?? null;
+  const peakSignal = statsData.last1min?.local?.peak_signal ?? null;
+
   // Optional feeder statuses — fetched in parallel, graceful failure
   const [fr24Res, piawareRes] = await Promise.allSettled([
     safeFetch(`http://${ADSB_HOST}:8754/monitor.json`, 2000),
@@ -134,6 +138,9 @@ const getLive = withCache('live', 25000, async () => {
     aircraft_with_pos:  withPos.length,
     max_range_nm:       Math.round(maxRange * 10) / 10,
     msg_rate:           msgRate,
+    signal,
+    noise,
+    peak_signal:        peakSignal,
     feeders: {
       fr24: fr24 ? {
         status:          fr24.feed_status || 'unknown',
@@ -250,13 +257,27 @@ const getFeeders = withCache('feeders', 30000, async () => {
       .split(',').map(s => s.trim().toLowerCase()).filter(Boolean)
   );
 
-  // Realtime probes (fr24, piaware) in parallel.
+  // Realtime probes (fr24, piaware) + monitoring services in parallel.
   const rtEntries = catalog.filter(f => f.detect.type === 'realtime');
-  const rtResults = await Promise.allSettled(
-    rtEntries.map(f => safeFetch(`http://${ADSB_HOST}:${f.detect.port}${f.detect.path}`, 3000))
-  );
+  const monServices = {
+    grafana:    (process.env.GRAFANA_INTERNAL_URL || 'http://localhost:3000') + '/api/health',
+    prometheus: (process.env.PROMETHEUS_INTERNAL_URL || 'http://localhost:9090') + '/api/v1/status/buildinfo',
+    influxdb:   (process.env.INFLUXDB_INTERNAL_URL || 'http://localhost:8086') + '/health',
+  };
+
+  const rtResults = await Promise.allSettled([
+    ...rtEntries.map(f => safeFetch(`http://${ADSB_HOST}:${f.detect.port}${f.detect.path}`, 3000)),
+    ...Object.values(monServices).map(url => safeFetch(url, 2000))
+  ]);
+
   const rtData = {};
   rtEntries.forEach((f, i) => { rtData[f.key] = rtResults[i].status === 'fulfilled' ? rtResults[i].value : null; });
+
+  const monData = {};
+  Object.keys(monServices).forEach((key, i) => {
+    const idx = rtEntries.length + i;
+    monData[key] = rtResults[idx].status === 'fulfilled' && rtResults[idx].value !== null;
+  });
 
   // One docker round-trip for every container-backed feeder + non-feeder local
   // services (e.g. planefence) the main page links to (skipped when off).
@@ -342,6 +363,15 @@ const getFeeders = withCache('feeders', 30000, async () => {
     services[key] = { installed: !!c, status: dockerStatus(c), detected: dockerDetected };
   }
 
+  // Add monitoring services
+  for (const [key, ok] of Object.entries(monData)) {
+    services[key] = {
+      installed: true,
+      status: ok ? 'connected' : 'offline',
+      detected: true
+    };
+  }
+
   return {
     updated_at:  new Date().toISOString(),
     station:     { lat: station.lat, lon: station.lon, alt_ft: station.alt_ft },
@@ -392,6 +422,15 @@ router.get('/aircraft', async (req, res) => {
 router.get('/live', async (req, res) => {
   try { res.json(await getLive()); }
   catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+router.get('/outline', async (req, res) => {
+  try {
+    const data = await safeFetch(`${BASE}/data/outline.json`);
+    res.json(data);
+  } catch (e) {
+    res.status(502).json({ error: 'Receiver outline unavailable' });
+  }
 });
 
 router.get('/stats', async (req, res) => {

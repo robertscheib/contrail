@@ -202,14 +202,7 @@ main { max-width: 1100px; margin: 0 auto; padding: 24px 20px 48px; display: flex
   <!-- Feeder grid -->
   <div id="grid"></div>
 
-  <!-- MLAT section -->
-  <div id="mlat-section">
-    <div id="mlat-header" onclick="toggleMlat()">
-      <span id="mlat-title">MLAT Status</span>
-      <span id="mlat-toggle">▾</span>
-    </div>
-    <div id="mlat-body"></div>
-  </div>
+
 
   <!-- Footer -->
   <div id="page-footer">
@@ -331,6 +324,16 @@ function buildCard(key, f) {
   if (f.piaware_version)  stats.push({ label: 'Version', val: `PiAware ${f.piaware_version}` });
   if (f.cpu_load != null) stats.push({ label: 'CPU', val: `${f.cpu_load}%` });
 
+  if (f.mlat && f.installed) {
+    const mlatVal = f.mlat_status || 'not connected';
+    const mlatMsg = f.mlat_message ? ` (${f.mlat_message})` : '';
+    const mlatClass = mlatVal.replace(/ /g, '-');
+    stats.push({
+      label: 'MLAT',
+      val: `<span class="mlat-status ${mlatClass}">${mlatVal}</span>${mlatMsg}`
+    });
+  }
+
   if (hasDocker) {
     // Live docker stats replace/augment the audit note
     stats.push({ label: 'Health',   val: `${healthDot(docker.health)} ${docker.health}` });
@@ -395,32 +398,6 @@ function buildCard(key, f) {
     </div>`;
 }
 
-function buildMlat(feeders) {
-  const rows = [];
-  // MLAT providers = catalog feeders flagged mlat:true, installed, with a status.
-  for (const key of _order) {
-    const f = feeders[key];
-    if (!f || !f.mlat || !f.installed || !f.mlat_status) continue;
-    const s = f.mlat_status.replace(/ /g, '-');
-    const msg = f.mlat_message || '';
-    rows.push(`
-      <div class="mlat-row">
-        <span class="mlat-provider">${f.name}</span>
-        <span class="mlat-status ${s}">${f.mlat_status}</span>
-        ${msg ? `<span class="mlat-msg">${msg}</span>` : ''}
-      </div>`);
-  }
-  return rows.length
-    ? rows.join('')
-    : '<div style="font-size:13px;color:var(--muted)">No MLAT data available</div>';
-}
-
-let _mlatOpen = true;
-function toggleMlat() {
-  _mlatOpen = !_mlatOpen;
-  document.getElementById('mlat-body').style.display  = _mlatOpen ? '' : 'none';
-  document.getElementById('mlat-toggle').textContent = _mlatOpen ? '▾' : '▸';
-}
 
 function renderBanner(d) {
   const el = document.getElementById('detect-banner');
@@ -475,8 +452,7 @@ async function refresh() {
       .map(k => buildCard(k, feeders[k]))
       .join('');
 
-    // MLAT
-    document.getElementById('mlat-body').innerHTML = buildMlat(feeders);
+
 
     // Station footer
     const st = d.station || {};
